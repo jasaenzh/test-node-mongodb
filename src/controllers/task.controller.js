@@ -1,6 +1,7 @@
 import Task from "../models/Task";
+import { getPagination } from "../libs/getPagination"
 
-
+// Crear Tarea
 export const crearTarea = async (req, res) => {
     const { titulo, descripcion, hecho } = req.body;
 
@@ -25,11 +26,34 @@ export const crearTarea = async (req, res) => {
 
 }
 
+// Obtener todas las tareas
 export const obtenerTareas = async (req, res) => {
 
+    // size => Cantidad de elementos  |  page => Cantidad de paginas
+    const { size, page, titulo } = req.query
+
     try {
-        const obtenerTareas = await Task.find()
-        res.status(200).json({ message: "Tareas", obtenerTareas })
+        // Para usar paginate debemos de pasar dos parametros el primero es una query y segundo son las opciones (cuantos limites de pagina quiere )
+        // offset = Cuantas paginas quiero
+        // limit = Cantidad de documentos por pagina
+
+        const condicion = titulo
+            ? {
+                titulo: { $regex: new RegExp(titulo), $options: "i" }
+            } : {};
+
+        const { limit, offset } = getPagination(page, size)
+
+        const obtenerTareas = await Task.paginate(condicion, { offset: offset, limit: limit })
+        res.status(200).json({
+            obtenerTareas
+            // totalItems: obtenerTareas.totalDocs,
+            // tareas: obtenerTareas.docs,
+            // pagianasTotales: obtenerTareas.totalPages,
+            // paginaActual: obtenerTareas.page - 1,
+            // itemIncial: obtenerTareas.offset,
+
+        })
     } catch (error) {
         res.status(500).json({
             message: error.message || "Algo salio mal mientras obtenia las tareas"
@@ -39,7 +63,7 @@ export const obtenerTareas = async (req, res) => {
 
 }
 
-
+// Obtener tarea por Id
 export const obtenerTareaId = async (req, res) => {
     const { id } = req.params
 
@@ -63,6 +87,7 @@ export const obtenerTareaId = async (req, res) => {
 
 }
 
+// Eliminar tarea
 export const eliminarTarea = async (req, res) => {
 
     const { id } = req.params
@@ -86,6 +111,7 @@ export const eliminarTarea = async (req, res) => {
     }
 }
 
+// Obtener tareas realizadas
 export const TareasRealizadas = async (req, res) => {
     const obtenerTareasHechas = await Task.find({
         hecho: true
@@ -93,6 +119,7 @@ export const TareasRealizadas = async (req, res) => {
     res.status(200).json({ message: "Tareas Realizadas", obtenerTareasHechas })
 }
 
+// Actualizar tarea
 export const actualizarTarea = async (req, res) => {
     const { id } = req.params;
     let TareaActualizar;
